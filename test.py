@@ -1,77 +1,31 @@
-from bs4 import BeautifulSoup
-import requests
-import csv
+import tkinter as tk
+from tkinter import ttk
+import mysql.connector
 
-t=[]
-def scrape(sections, file_names):
-    for i in range(len(sections)):
-        with open(file_names[i], 'w') as csv_file:
-            csv_writer = csv.writer(csv_file)
-            csv_writer.writerow(['Prod_name','Prod_image','Prod_applications','Prod_feature'])
+def show():
+	mysqldb = mysql.connector.connect(host="localhost", user="root", password="Shub@8877240694", database="college")
+	mycursor = mysqldb.cursor()
+	mycursor.execute("SELECT emp_id,emp_name,emp_email,emp_mob FROM student")
+	records = mycursor.fetchall()
+	print(records)
 
-            print(f'> {sections[i]}')
-            source = requests.get(sections[i])
-            soup = BeautifulSoup(source.content, 'lxml')
-            try:
-                for img in soup.find_all('div',class_='col-md12'):
-                    p_img = img.div.img['src'].replace(' ','%20')
-                    prod_img = f'http://www.wipltd.in/{p_img}'
-                    print(prod_img)
-                    prod_applications = img.find('li').text
-                    print(prod_applications)
-                    prod_feature = img.find_all('li')[1:]
-                    p_features = u' '.join(str(e) for e in prod_feature).replace('<li>','') 
-                    prod_features = p_features.replace('</li>','')
-                    print(prod_features)
-                    prod_name = img.select_one('ul>*').previous_sibling.strip()
-                    print(prod_name)
-                    csv_writer.writerow([prod_name,prod_img,prod_applications,prod_features])
-            except:
-                print('')
-            
-            try:
-                for src in soup.find_all('div',class_='col-md4'):
-                    prod_name = src.div.text
-                    p_img = src.img['src']
-                    print(prod_name)
-                    prod_img = f'http://www.wipltd.in/{p_img}'.replace(' ','%20')
-                    print(prod_img)
-                    csv_writer.writerow([prod_name,prod_img])
-            except:
-                print('')
-
-            
-
-            
+	for i, (id,stname, course,fee) in enumerate(records, start=1):
+		Label.insert("", "end", values=(id, stname, course, fee))
+		mysqldb.close()
 
 
 
-            
-            
 
+root = tk.Tk()
+root.title("Student Records")
+Label = tk.Label(root, text="Student Records", font=("Arial",30)).grid(row=0, columnspan=3)
 
-if __name__ == '__main__':
+cols = ('id', 'stname', 'course','fee')
+Label = ttk.Treeview(root, columns=cols, show='headings')
 
-    '''
-    usage:
-    -> install requirements
-    -> verify:
-        - all site sections are listed in `sections`
-        - all sites have a corresponding csv file `file_names`
-        - all paths to the csv file are correct
-    -> run
-    '''
-
-    sections = ['http://www.wipltd.in/plywood.php',
-                'http://www.wipltd.in/hardboards.php',
-                'http://www.wipltd.in/densified_wood.php',
-                'http://www.wipltd.in/products.php',
-                'http://www.wipltd.in/woode_floor.php']  
-
-    file_names = ['./data/plywood.csv',
-                './data/hardboard.csv',
-                './data/densified_wood.csv',
-                './data/furniture.csv',
-                './data/wooden_flooring.csv']
-
-    scrape(sections, file_names)
+for col in cols:
+    Label.heading(col, text=col)    
+    Label.grid(row=1, column=0, columnspan=2)
+closeButton = tk.Button(root, text="Close", width=15, command=exit).grid(row=4, column=1)
+show()
+root.mainloop()
